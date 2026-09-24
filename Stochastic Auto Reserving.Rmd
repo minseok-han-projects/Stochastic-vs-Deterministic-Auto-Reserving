@@ -9,3 +9,22 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r}
+library(DBI)
+library(RSQLite)
+library(reshape2)
+library(ChainLadder)
+
+conn <- dbConnect(RSQLite::SQLite(), "CommAuto")
+
+query <- "
+SELECT AccidentYear, DevelopmentLag, Sum(CumPaidLoss) as CumPaidLoss
+FROM commercial_auto
+Where AccidentYear + DevelopmentLag <= 2008
+GROUP BY AccidentYear, Development Lag
+"
+industry_data <- dbGetQuery(conn, query)
+dbDisconnect(conn)
+
+industry_data
+```
