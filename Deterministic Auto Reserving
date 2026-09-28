@@ -49,10 +49,12 @@ for i in range(len(upper_triangle.columns)-1):
 ldfs = [1.0 if pd.isna(x) else x for x in ldfs]
 for i, ldf in enumerate(ldfs):
     print(f"Loss Development Factor from lag {i} to lag {i+1}: {ldf:.4f}")
+df_ldfs = pd.DataFrame(ldfs)
 
 cdfs = [1.0] * 10
 for i in range(8, -1, -1):
     cdfs[i] = cdfs[i+1] * ldfs[i]
+df_cdfs = pd.DataFrame(cdfs)
 
 latest_diagonal = upper_triangle.apply(
     lambda row: row.dropna().iloc[-1] if not row.dropna().empty else np.nan,
@@ -60,8 +62,8 @@ latest_diagonal = upper_triangle.apply(
 )
 aligned_cdfs = cdfs[::-1]
 aligned_cdfs_series = pd.Series(aligned_cdfs, index=latest_diagonal.index)
-
 ultimate_losses = latest_diagonal * aligned_cdfs_series
+
 results = pd.DataFrame({
     'Latest Known Loss': latest_diagonal,
     'CDF to Ultimate': aligned_cdfs_series,
@@ -69,4 +71,8 @@ results = pd.DataFrame({
 })
 pd.options.display.float_format = '{:,.2f}'.format
 
-print(results)
+with pd.ExcelWriter('Commercial_Auto_Reserving_Dashboard.xlsx') as writer:
+    upper_triangle.to_excel(writer, sheet_name = 'Upper Triangle', index = False)
+    df_ldfs.to_excel(writer, sheet_name = 'Loss Development Factors', index = False)
+    df_cdfs.to_excel(writer, sheet_name = 'Cumulative Development Factors', index = False)
+    results.to_excel(writer, sheet_name = 'Results', index = False)
