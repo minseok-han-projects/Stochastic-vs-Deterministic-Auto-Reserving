@@ -7,24 +7,37 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-```
 
-```{r}
 library(DBI)
 library(RSQLite)
 library(reshape2)
 library(ChainLadder)
+```
 
-conn <- dbConnect(RSQLite::SQLite(), "CommAuto")
+```{r}
+conn <- dbConnect(RSQLite::SQLite(), "CommAuto.db")
 
 query <- "
-SELECT AccidentYear, DevelopmentLag, Sum(CumPaidLoss) as CumPaidLoss
-FROM commercial_auto
-Where AccidentYear + DevelopmentLag <= 2008
-GROUP BY AccidentYear, Development Lag
+  SELECT AccidentYear, DevelopmentLag, SUM(CumPaidLoss) as CumPaidLoss
+  FROM commercial_auto
+  WHERE AccidentYear + DevelopmentLag <= 2008 -- Mask the future
+  GROUP BY AccidentYear, DevelopmentLag
 "
 industry_data <- dbGetQuery(conn, query)
-dbDisconnect(conn)
 
-industry_data
+dbDisconnect(conn)
 ```
+
+```{r}
+tri_matrix <- dcast(industry_data, AccidentYear ~ DevelopmentLag, value.var = "CumPaidLoss")
+tri <- as.triangle(as.matrix(tri_matrix[, -1]))
+dimnames(tri)[[1]] <- tri_matrix$AccidentYear
+```
+
+```{r}
+set.seed(88125)
+boot_model <- BootChainLadder(tri, R = 1000, process.distr = "gamma")
+print(summary(boot_model))
+plot(boot_model)
+```
+
