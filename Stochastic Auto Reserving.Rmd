@@ -12,6 +12,7 @@ library(DBI)
 library(RSQLite)
 library(reshape2)
 library(ChainLadder)
+library(openxlsx)
 ```
 
 ```{r}
@@ -37,7 +38,18 @@ dimnames(tri)[[1]] <- tri_matrix$AccidentYear
 ```{r}
 set.seed(88125)
 boot_model <- BootChainLadder(tri, R = 1000, process.distr = "gamma")
-print(summary(boot_model))
+bootstrap_summary <- summary(boot_model)
+print(bootstrap_summary)
 plot(boot_model)
 ```
+
+```{r}
+# summary <- as.data.frame(bootstrap_summary$Totals)
+
+# wb <- loadWorkbook("Commercial_Auto_Reserving_Dashboard.xlsx")
+# addWorksheet(wb, sheetName = "Bootstrap Summary")
+# writeData(wb, sheet = "Bootstrap Summary", x = summary, rowNames = TRUE)
+# saveWorkbook(wb, "Commercial_Auto_Reserving_Dashboard.xlsx", overwrite = TRUE)
+```
+
 
