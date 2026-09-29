@@ -6,12 +6,12 @@ from builtins import print
 
 conn = sq.connect('CommAuto.db')
 
-Comm_Auto = ["Commercial Auto Data Set.csv"]
+Comm_Auto = ["comauto_pos_98-07.csv"]
 
 for file in Comm_Auto:
     if os.path.exists(file):
         df = pd.read_csv(file)
-        table_name = file.replace(" Data Set.csv", "").replace(" ", "_").lower()
+        table_name = file.replace("comauto_pos_98-07.csv", "commercial_auto")
         df.to_sql(table_name, conn, if_exists='replace', index=False)
         print(f"Loaded {file} into the '{table_name}' table.")
     else:
@@ -71,8 +71,8 @@ results = pd.DataFrame({
 })
 pd.options.display.float_format = '{:,.2f}'.format
 
-with pd.ExcelWriter('Commercial_Auto_Reserving_Dashboard.xlsx') as writer:
-    upper_triangle.to_excel(writer, sheet_name = 'Upper Triangle', index = False)
-    df_ldfs.to_excel(writer, sheet_name = 'Loss Development Factors', index = False)
-    df_cdfs.to_excel(writer, sheet_name = 'Cumulative Development Factors', index = False)
-    results.to_excel(writer, sheet_name = 'Results', index = False)
+#with pd.ExcelWriter('Commercial_Auto_Reserving_Dashboard.xlsx') as writer:
+#    upper_triangle.to_excel(writer, sheet_name = 'Upper Triangle', index = False)
+#    df_ldfs.to_excel(writer, sheet_name = 'Loss Development Factors', index = False)
+#    df_cdfs.to_excel(writer, sheet_name = 'Cumulative Development Factors', index = False)
+#    results.to_excel(writer, sheet_name = 'Results', index = False)
