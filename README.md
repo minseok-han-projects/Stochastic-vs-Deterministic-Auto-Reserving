@@ -1,4 +1,3 @@
-[README.md](https://github.com/user-attachments/files/33225675/README.md)
 # Deterministic vs. Stochastic Loss Reserving: Commercial Auto Liability
 
 An end-to-end property & casualty loss reserving model built on the CAS / NAIC
