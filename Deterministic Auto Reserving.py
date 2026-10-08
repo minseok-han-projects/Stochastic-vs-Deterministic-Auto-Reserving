@@ -1,0 +1,81 @@
+import sqlite3 as sq
+import pandas as pd
+import numpy as np
+import os
+
+conn = sq.connect('CommAuto.db')
+
+Comm_Auto = ["comauto_pos_98-07.csv"]
+
+for file in Comm_Auto:
+    if os.path.exists(file):
+        df = pd.read_csv(file)
+        table_name = file.replace("comauto_pos_98-07.csv", "commercial_auto")
+        df.to_sql(table_name, conn, if_exists='replace', index=False)
+        print(f"Loaded {file} into the '{table_name}' table.")
+    else:
+        print(f"File not found: {file}")
+
+query = """
+SELECT AccidentYear, DevelopmentLag, Sum(CumPaidLoss) as CumPaidLoss
+FROM commercial_auto
+GROUP BY AccidentYear, DevelopmentLag
+ORDER BY
+    AccidentYear ASC,
+    DevelopmentLag ASC;
+"""
+df_industry = pd.read_sql_query(query, conn)
+
+conn.close()
+
+triangle = df_industry.pivot(index='AccidentYear', columns='DevelopmentLag', values='CumPaidLoss')
+
+upper_triangle = triangle.copy()
+upper_triangle.index = upper_triangle.index.astype(int)
+upper_triangle.columns = upper_triangle.columns.astype(int)
+for ay in upper_triangle.index:
+    for lag in upper_triangle.columns:
+        if ay + lag > 2008:
+            upper_triangle.at[ay, lag] = np.nan
+
+ldfs = []
+for i in range(len(upper_triangle.columns)-1):
+    current_lag = upper_triangle.columns[i]
+    next_lag = upper_triangle.columns[i+1]
+    valid_data = upper_triangle[[current_lag, next_lag]].dropna()
+    ldf = valid_data[next_lag].sum() / valid_data[current_lag].sum()
+    ldfs.append(ldf)
+ldfs = [1.0 if pd.isna(x) else x for x in ldfs]
+for i, ldf in enumerate(ldfs):
+    print(f"Loss Development Factor from lag {i+1} to lag {i+2}: {ldf:.4f}")
+df_ldfs = pd.DataFrame({'Age': [f"{i+1}-{i+2}" for i in range(9)], 'LDF': ldfs})
+
+cdfs = [1.0] * 10
+for i in range(8, -1, -1):
+    cdfs[i] = cdfs[i+1] * ldfs[i]
+df_cdfs = pd.DataFrame({'Age': range(1, 11), 'CDF to Ultimate': cdfs})
+
+latest_diagonal = upper_triangle.apply(
+    lambda row: row.dropna().iloc[-1] if not row.dropna().empty else np.nan,
+    axis=1
+)
+aligned_cdfs = cdfs[::-1]
+aligned_cdfs_series = pd.Series(aligned_cdfs, index=latest_diagonal.index)
+ultimate_losses = latest_diagonal * aligned_cdfs_series
+
+results = pd.DataFrame({
+    'Latest Known Loss': latest_diagonal,
+    'CDF to Ultimate': aligned_cdfs_series,
+    'Projected Ultimate Loss': ultimate_losses
+})
+pd.options.display.float_format = '{:,.2f}'.format
+
+backtest = pd.DataFrame({'Projected Reserve': ultimate_losses-latest_diagonal,
+                         'Actual Paid After 2007': triangle[10]-latest_diagonal})
+print(backtest.sum())
+
+# with pd.ExcelWriter('Commercial_Auto_Reserving_Dashboard.xlsx') as writer:
+#     upper_triangle.to_excel(writer, sheet_name = 'Upper Triangle')
+#     df_ldfs.to_excel(writer, sheet_name = 'Loss Development Factors', index = False)
+#     df_cdfs.to_excel(writer, sheet_name = 'Cumulative Development Factors', index = False)
+#     results.to_excel(writer, sheet_name = 'Results')
