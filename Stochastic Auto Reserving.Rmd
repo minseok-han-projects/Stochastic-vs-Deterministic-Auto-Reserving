@@ -47,7 +47,7 @@ plot(boot_model)
 # summary <- as.data.frame(bootstrap_summary$Totals)
 
 # wb <- loadWorkbook("Commercial_Auto_Reserving_Dashboard.xlsx")
-# addWorksheet(wb, sheetName = "Bootstrap Summary")
+# if (!"Bootstrap Summary" %in% names(wb)) addWorksheet(wb, sheetName = "Bootstrap Summary")
 # writeData(wb, sheet = "Bootstrap Summary", x = summary, rowNames = TRUE)
 # saveWorkbook(wb, "Commercial_Auto_Reserving_Dashboard.xlsx", overwrite = TRUE)
 ```
